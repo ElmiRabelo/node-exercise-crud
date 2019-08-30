@@ -3,6 +3,15 @@ const express = require("express");
 const server = express();
 server.use(express.json());
 
+//middlewares
+function checkProjectExists(req, res, next) {
+	const project = projects.find(p => (p.id == req.params.id ? true : false));
+	if (!project) {
+		return res.json({ error: "O projeto com essa id não existe" });
+	}
+
+	return next();
+}
 //projetos
 const projects = [];
 
@@ -22,7 +31,7 @@ server.get("/projects", (req, res) => {
 });
 
 //atualizando titulo de um projeto
-server.put("/projects/:id", (req, res) => {
+server.put("/projects/:id", checkProjectExists, (req, res) => {
 	const { id } = req.params;
 	const { title } = req.body;
 
@@ -32,7 +41,7 @@ server.put("/projects/:id", (req, res) => {
 });
 
 //deletando o projeto
-server.delete("/projects/:id", (req, res) => {
+server.delete("/projects/:id", checkProjectExists, (req, res) => {
 	const { id } = req.params;
 	const idx = projects.findIndex(p => p.id == id);
 	projects.splice(idx, 1);
@@ -40,7 +49,7 @@ server.delete("/projects/:id", (req, res) => {
 });
 
 //criando tarefa em tasks
-server.post("/projects/:id/tasks", (req, res) => {
+server.post("/projects/:id/tasks", checkProjectExists, (req, res) => {
 	const { id } = req.params;
 	const { title } = req.body;
 	const idx = projects.findIndex(p => p.id == id);
