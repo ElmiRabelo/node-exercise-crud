@@ -1,61 +1,50 @@
-//configuração inicial
 const express = require("express");
-const server = express();
-server.use(express.json());
+const nunjucks = require("nunjucks");
 
-//middlewares
-function checkProjectExists(req, res, next) {
-	const project = projects.find(p => (p.id == req.params.id ? true : false));
-	if (!project) {
-		return res.json({ error: "O projeto com essa id não existe" });
-	}
+const app = express();
 
-	return next();
+//nunjucks configuração
+nunjucks.configure("views", {
+  autoescape: true,
+  express: app,
+  watch: true
+});
+
+app.set("view engine", "njk");
+
+//express ler informações de form
+app.use(express.urlencoded({ extended: false }));
+
+let userAge;
+//setAgeInReq Middleware
+function setAgeInReq(req, res, next) {
+  const { age } = req.body;
+  userAge = age;
+  return next();
 }
-//projetos
-const projects = [];
 
-//routes
-
-//criando novo projeto
-server.post("/projects", (req, res) => {
-	const { id, title } = req.body;
-	projects.push({ id, title, tasks: [] });
-
-	return res.json(projects);
+//rotas
+app.get("/", (req, res) => {
+  return res.render("home");
 });
 
-//requesição de todos os projetos
-server.get("/projects", (req, res) => {
-	return res.json(projects);
+app.post("/check", (req, res) => {
+  const { age } = req.body;
+  if (age >= 18) {
+    return res.redirect(`/major?age=${age}`);
+  } else {
+    return res.redirect(`/minor?age=${age}`);
+  }
 });
 
-//atualizando titulo de um projeto
-server.put("/projects/:id", checkProjectExists, (req, res) => {
-	const { id } = req.params;
-	const { title } = req.body;
-
-	const idx = projects.findIndex(p => p.id == id);
-	projects[idx].title = title;
-	return res.json(projects);
+app.get("/major", (req, res) => {
+  const { age } = req.query;
+  return res.render("major", { age });
 });
 
-//deletando o projeto
-server.delete("/projects/:id", checkProjectExists, (req, res) => {
-	const { id } = req.params;
-	const idx = projects.findIndex(p => p.id == id);
-	projects.splice(idx, 1);
-	return res.json(projects);
+app.get("/minor", (req, res) => {
+  const { age } = req.query;
+  return res.render("minor", { age });
 });
 
-//criando tarefa em tasks
-server.post("/projects/:id/tasks", checkProjectExists, (req, res) => {
-	const { id } = req.params;
-	const { title } = req.body;
-	const idx = projects.findIndex(p => p.id == id);
-	projects[idx].tasks.push(title);
-
-	return res.json(projects[idx]);
-});
-
-server.listen(3000);
+app.listen(3005);
